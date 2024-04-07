@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conecta 4</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .menuFicha {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ficha {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: relative;
+            margin: 10px;
+        }
+
+        .ficha.fichaAmarilla {
+            background-color: yellow;
+        }
+
+        .ficha.fichaRoja {
+            background-color: red;
+        }
+
+        
+        #miTablero {
+            margin: 20px;
+        }
+
+        
+        .table td {
+            width: 100px;
+            height: 100px;
+            border: 2px solid black;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+        }
+
+        
+        .circulo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .amarillo {
+            background-color: yellow;
+        }
+
+        .rojo {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div id="menu" class="col-sm-12 col-lg-12">
+                <h1>Juego Conecta 4</h1>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="menu col-sm-12 col-lg-12">
+                <label for="tamaño">Tamaño:</label>
+                <input type="number" id="tamaño" name="tamaño">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 col-lg-12">
+                <label for="jugador">Selecciona quien inicia el juego:</label>
+                <select class="form-control" id="jugador">
+                    <option value="jugador">Jugador</option>
+                    <option value="computadora">Computadora</option>
+                </select>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col">
+                <div class="row menuFicha text-align-center">
+                    <div class="col-md-12 col-lg-2">
+                        <div class="ficha fichaAmarilla boton-circular" id="fichaAmarilla"></div>
+                    </div>
+                    <div class="col-md-12 col-lg-2">
+                        <div class="ficha fichaRoja boton-circular" id="fichaRoja"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div id="miTablero" class="col-sm-12 col-lg-6">
+                <table class="table" id="tablaJugador">
+                    <thead>
+                        <tr>
+                            <th colspan="6">TABLERO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <button id="btnEmpezar" class="btn btn-primary">Empezar</button>
+            </div>
+        </div>
+    </div>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function(){
+        var tamaño = 0;
+        var fichaSeleccionada = "";
+        var juegoTerminado = false;
+
+        $('#tamaño').change(function() {
+            tamaño = parseInt($(this).val());
+            if (tamaño >= 5 && tamaño <= 10) {
+                generarTablero(tamaño);
+            } else {
+                alert("Ingrese un valor válido para el tamaño. Mínimo 5 y máximo 10.");
+            }
+        });
+
+        $('.ficha').click(function() {
+            fichaSeleccionada = $(this).attr('id');
+        });
+
+        $('#btnEmpezar').click(function() {
+            if ($(this).text() === "Reiniciar") {
+                location.reload();
+                return;
+            }
+            if (fichaSeleccionada === "") {
+                alert("Por favor selecciona una ficha antes de empezar.");
+                return;
+            }
+            
+            $(this).text("Reiniciar");
+           
+            var inicio = $('#jugador').val();
+            if (inicio === 'computadora') {
+                turnoPC(); 
+            }
+           
+            asignarEventosClic();
+        });
+
+        function generarTablero(tamaño) {
+            var tabla = $('#tablaJugador tbody');
+            tabla.empty(); 
+            
+            for (var i = 0; i < tamaño; i++) {
+                var fila = $('<tr>');
+                for (var j = 0; j < tamaño; j++) {
+                    fila.append('<td><div class="circulo"></div></td>');
+                }
+                tabla.append(fila);
+            }
+        }
+
+        function asignarEventosClic() {
+            $('.table td').click(function() {
+                if (juegoTerminado) return;
+                var columna = $(this).index();
+                var celdas = $('#tablaJugador tbody tr').find('td:eq(' + columna + ')');
+                for (var i = celdas.length - 1; i >= 0; i--) {
+                    if (!$(celdas[i]).find('.circulo').hasClass('ficha')) {
+                        $(celdas[i]).find('.circulo').addClass(fichaSeleccionada);
+                        $(celdas[i]).find('.circulo').addClass('ficha');
+                        
+                        if (verificarGanador(columna, i)) {
+                            setTimeout(function() {alert("¡" + (fichaSeleccionada === 'fichaAmarilla' ? "Jugador" : "Computadora") + " gana!");location.reload();}, 500);
+                            
+                            juegoTerminado = true;
+                        }
+                        
+                        if (!juegoTerminado) {
+                            turnoPC();
+                            if (verificarGanador()) {
+                                setTimeout(function() {alert("¡Computadora gana!");location.reload();}, 500);
+                                juegoTerminado = true;
+                            }
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+
+        function turnoPC() {
+            if (juegoTerminado) return; 
+            var columnaPC = Math.floor(Math.random() * tamaño); 
+            var celdasPC = $('#tablaJugador tbody tr').find('td:eq(' + columnaPC + ')');
+            for (var i = celdasPC.length - 1; i >= 0; i--) {
+                if (!$(celdasPC[i]).find('.circulo').hasClass('ficha')) {
+                    $(celdasPC[i]).find('.circulo').addClass('fichaRoja'); 
+                    $(celdasPC[i]).find('.circulo').addClass('ficha');
+                    break;
+                }
+            }
+        }
+
+        function verificarGanador(columna, fila) {
+            if (typeof columna !== 'undefined' && typeof fila !== 'undefined') {
+                return (verificarHorizontal(columna, fila) || verificarVertical(columna, fila) || verificarDiagonal(columna, fila));
+            } else {
+                
+                for (var i = 0; i < tamaño; i++) {
+                    for (var j = 0; j < tamaño; j++) {
+                        if (verificarHorizontal(i, j) || verificarVertical(i, j) || verificarDiagonal(i, j)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+
+        function verificarHorizontal(columna, fila) {
+            var contador = 0;
+            var celdaActual = $('#tablaJugador tbody tr').eq(fila).find('td').eq(columna).find('.circulo');
+            var claseFicha = celdaActual.attr('class').split(' ')[1];
+
+           
+            for (var i = columna; i < tamaño; i++) {
+                var celda = $('#tablaJugador tbody tr').eq(fila).find('td').eq(i).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            for (var i = columna - 1; i >= 0; i--) {
+                var celda = $('#tablaJugador tbody tr').eq(fila).find('td').eq(i).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        function verificarVertical(columna, fila) {
+            var contador = 0;
+            var celdaActual = $('#tablaJugador tbody tr').eq(fila).find('td').eq(columna).find('.circulo');
+            var claseFicha = celdaActual.attr('class').split(' ')[1];
+
+            
+            for (var i = fila; i < tamaño; i++) {
+                var celda = $('#tablaJugador tbody tr').eq(i).find('td').eq(columna).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        function verificarDiagonal(columna, fila) {
+            var contador = 0;
+            var celdaActual = $('#tablaJugador tbody tr').eq(fila).find('td').eq(columna).find('.circulo');
+            var claseFicha = celdaActual.attr('class').split(' ')[1]; 
+
+            for (var i = fila, j = columna; i >= 0 && j < tamaño; i--, j++) {
+                var celda = $('#tablaJugador tbody tr').eq(i).find('td').eq(j).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                    
+                } else {
+                    break;
+                }
+            }
+
+            
+            for (var i = fila + 1, j = columna - 1; i < tamaño && j >= 0; i++, j--) {
+                var celda = $('#tablaJugador tbody tr').eq(i).find('td').eq(j).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            contador = 0;
+
+            for (var i = fila, j = columna; i < tamaño && j < tamaño; i++, j++) {
+                var celda = $('#tablaJugador tbody tr').eq(i).find('td').eq(j).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            for (var i = fila - 1, j = columna - 1; i >= 0 && j >= 0; i--, j--) {
+                var celda = $('#tablaJugador tbody tr').eq(i).find('td').eq(j).find('.circulo');
+                if (celda.hasClass(claseFicha)) {
+                    contador++;
+                    if (contador === 4) return true;
+                } else {
+                    break;
+                }
+            }
+
+            return false;
+        }
+    });
+</script>
+</body>
+</html>
